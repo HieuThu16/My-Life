@@ -1,37 +1,59 @@
 package com.example.banthan;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.ViewGroup;
+import android.widget.Toolbar;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.button.MaterialButton;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
-import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.NavigationUI;
+import java.util.ArrayList;
+import java.util.List;
 
-import com.example.banthan.databinding.ActivityMainBinding;
-
+// MainActivity.java
 public class MainActivity extends AppCompatActivity {
-
-    private ActivityMainBinding binding;
+    private RecyclerView skillsRecycler;
+    private BottomNavigationView bottomNav;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-        binding = ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
+        skillsRecycler = findViewById(R.id.skills_recycler);
+        bottomNav = findViewById(R.id.bottom_navigation);
 
-        BottomNavigationView navView = findViewById(R.id.nav_view);
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
-        AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_notifications)
-                .build();
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
-        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
-        NavigationUI.setupWithNavController(binding.navView, navController);
+        setupSkillsRecycler();
+        setupBottomNavigation();
     }
 
+    private void setupSkillsRecycler() {
+        List<Skill> skills = new ArrayList<>();
+        skills.add(new Skill("English", "Language Development", 60));
+        skills.add(new Skill("Coding", "Programming Skills", 75));
+
+        SkillsAdapter adapter = new SkillsAdapter(skills);
+        skillsRecycler.setLayoutManager(new GridLayoutManager(this, 2));
+        skillsRecycler.setAdapter(adapter);
+
+        adapter.setOnItemClickListener(position -> {
+            if (skills.get(position).getTitle().equals("English")) {
+                startActivity(new Intent(this, EnglishDetailActivity.class));
+            }
+        });
+    }
+
+    private void setupBottomNavigation() {
+        bottomNav.setOnItemSelectedListener(item -> {
+            // Handle navigation
+            return true;
+        });
+    }
 }
+

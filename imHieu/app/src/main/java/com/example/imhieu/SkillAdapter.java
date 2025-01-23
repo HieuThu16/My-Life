@@ -15,11 +15,16 @@ import java.util.List;
 public class SkillAdapter extends RecyclerView.Adapter<SkillAdapter.SkillViewHolder> {
 
     private final List<Skill> skillList;
+    private final DatabaseHelper databaseHelper;
+    private final OnSkillScoreChangeListener onSkillScoreChangeListener;
 
-    // Constructor to initialize the skill list
-    public SkillAdapter(List<Skill> skillList) {
+    // Constructor to initialize the skill list, DatabaseHelper, and listener
+    public SkillAdapter(List<Skill> skillList, DatabaseHelper databaseHelper, OnSkillScoreChangeListener onSkillScoreChangeListener) {
         this.skillList = skillList;
+        this.databaseHelper = databaseHelper;
+        this.onSkillScoreChangeListener = onSkillScoreChangeListener;
     }
+
     public List<Skill> getSkills() {
         return skillList;
     }
@@ -49,6 +54,15 @@ public class SkillAdapter extends RecyclerView.Adapter<SkillAdapter.SkillViewHol
             if (currentPoints < skill.getMaxPoints()) {
                 skill.setPoints(currentPoints + 1); // Increment skill points
                 holder.skillScoreProgressBar.setProgress(skill.getPoints()); // Update progress bar
+
+                // Cập nhật database
+                databaseHelper.updateSkillPoints(skill.getId(), skill.getPoints());
+
+                // Gọi callback để thông báo thay đổi
+                if (onSkillScoreChangeListener != null) {
+                    onSkillScoreChangeListener.onSkillScoreChanged(skill);
+                }
+
                 notifyItemChanged(position); // Notify adapter of item change
             }
         });
@@ -59,6 +73,15 @@ public class SkillAdapter extends RecyclerView.Adapter<SkillAdapter.SkillViewHol
             if (currentPoints > 0) {
                 skill.setPoints(currentPoints - 1); // Decrement skill points
                 holder.skillScoreProgressBar.setProgress(skill.getPoints()); // Update progress bar
+
+                // Cập nhật database
+                databaseHelper.updateSkillPoints(skill.getId(), skill.getPoints());
+
+                // Gọi callback để thông báo thay đổi
+                if (onSkillScoreChangeListener != null) {
+                    onSkillScoreChangeListener.onSkillScoreChanged(skill);
+                }
+
                 notifyItemChanged(position); // Notify adapter of item change
             }
         });

@@ -181,5 +181,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return category;
     }
+    public void updateSkillPoints(int skillId, int points) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("score", points); // Giả sử cột lưu điểm là "points"
+
+        db.update("skills", values, "id = ?", new String[]{String.valueOf(skillId)});
+        db.close();
+    }
 
 }

@@ -19,7 +19,6 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
         this.onCategoryClickListener = onCategoryClickListener;
     }
 
-
     @NonNull
     @Override
     public CategoryViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -29,15 +28,14 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
     }
 
     @Override
-
     public void onBindViewHolder(@NonNull CategoryViewHolder holder, int position) {
         Category category = categories.get(position);
 
         // Hiển thị tên thể loại
         holder.nameTextView.setText(category.getName());
 
-        // Hiển thị điểm trung bình
-        double averageScore = category.getAverageScore();
+        // Tính toán và hiển thị điểm trung bình
+        double averageScore = calculateAverageScore(category);
         holder.averageScoreTextView.setText(String.format("Average Score: %.2f", averageScore));
 
         // Xử lý khi người dùng bấm vào item
@@ -48,10 +46,28 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
         });
     }
 
-
     @Override
     public int getItemCount() {
         return categories != null ? categories.size() : 0;
+    }
+
+    // Hàm tính toán điểm trung bình cho một Category
+    private double calculateAverageScore(Category category) {
+        List<Skill> skills = category.getSkills(); // Lấy danh sách kỹ năng của Category
+        if (skills == null || skills.isEmpty()) {
+            return 0; // Nếu không có kỹ năng nào, điểm trung bình là 0
+        }
+
+        double totalScore = 0;
+        for (Skill skill : skills) {
+            totalScore += skill.getPoints();
+        }
+        return totalScore / skills.size(); // Tính trung bình cộng
+    }
+
+    public void updateCategories(List<Category> updatedCategories) {
+        this.categories = updatedCategories;
+        notifyDataSetChanged(); // Thông báo RecyclerView cập nhật dữ liệu
     }
 
     public static class CategoryViewHolder extends RecyclerView.ViewHolder {
@@ -60,8 +76,8 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
 
         public CategoryViewHolder(@NonNull View itemView) {
             super(itemView);
-            nameTextView = itemView.findViewById(R.id.categoryName);
-            averageScoreTextView = itemView.findViewById(R.id.categoryScore);
+            nameTextView = itemView.findViewById(R.id.categoryName); // ID từ layout item_category.xml
+            averageScoreTextView = itemView.findViewById(R.id.categoryScore); // ID từ layout item_category.xml
         }
     }
 }

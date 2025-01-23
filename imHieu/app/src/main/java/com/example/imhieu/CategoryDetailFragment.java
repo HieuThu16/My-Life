@@ -63,8 +63,11 @@ public class CategoryDetailFragment extends Fragment {
     }
 
     private void setupRecyclerView() {
-        List<Skill> skills = databaseHelper.getSkillsForCategory(category.getId()); // Fetch skills from database
-        skillAdapter = new SkillAdapter(skills);
+        List<Skill> skills = databaseHelper.getSkillsForCategory(category.getId());
+        skillAdapter = new SkillAdapter(skills, databaseHelper, updatedSkill -> {
+            // Update the interface or data when the skill score changes
+            updateCategoryAverageScore();
+        });
         skillsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         skillsRecyclerView.setAdapter(skillAdapter);
     }
@@ -99,6 +102,15 @@ public class CategoryDetailFragment extends Fragment {
                                 skillDescription,
                                 category
                         );
+
+                        // Ensure skillAdapter is initialized
+                        if (skillAdapter == null) {
+                            List<Skill> skills = databaseHelper.getSkillsForCategory(category.getId());
+                            skillAdapter = new SkillAdapter(skills, databaseHelper, updatedSkill -> {
+                                updateCategoryAverageScore();
+                            });
+                            skillsRecyclerView.setAdapter(skillAdapter);
+                        }
 
                         // Add the skill to the adapter and database
                         skillAdapter.getSkills().add(newSkill);

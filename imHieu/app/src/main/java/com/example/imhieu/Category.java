@@ -49,4 +49,5 @@ public class Category implements Serializable {
     public float getAverageScore() {
         return averageScore;
     }
+    public void setAverageScore(float averageScore) { this.averageScore = averageScore; }
 }

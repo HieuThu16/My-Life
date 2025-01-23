@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
@@ -13,8 +14,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 
 public class CategoryDetailFragment extends Fragment {
@@ -25,6 +24,7 @@ public class CategoryDetailFragment extends Fragment {
     private SkillAdapter skillAdapter;
     private FloatingActionButton addSkillFab;
     private DatabaseHelper databaseHelper;
+    private TextView categoryAverageScoreTextView; // TextView for displaying the average score
 
     // Create a new instance of the fragment with the selected category
     public static CategoryDetailFragment newInstance(Category category) {
@@ -50,21 +50,24 @@ public class CategoryDetailFragment extends Fragment {
 
         skillsRecyclerView = view.findViewById(R.id.skillsRecyclerView);
         addSkillFab = view.findViewById(R.id.addSkillFab);
+        categoryAverageScoreTextView = view.findViewById(R.id.categoryAverageScoreTextView); // Initialize TextView
 
-        // Setup the RecyclerView and Add Skill button
+        // Setup RecyclerView and Add Skill button
         setupRecyclerView();
         setupAddSkillButton();
+
+        // Update the average score when the view is created
+        updateCategoryAverageScore();
 
         return view;
     }
 
     private void setupRecyclerView() {
-        List<Skill> skills = databaseHelper.getSkillsForCategory(category.getId());  // Fetch skills from database
+        List<Skill> skills = databaseHelper.getSkillsForCategory(category.getId()); // Fetch skills from database
         skillAdapter = new SkillAdapter(skills);
         skillsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         skillsRecyclerView.setAdapter(skillAdapter);
     }
-
 
     private void setupAddSkillButton() {
         addSkillFab.setOnClickListener(v -> showAddSkillDialog());
@@ -84,27 +87,26 @@ public class CategoryDetailFragment extends Fragment {
                     String skillName = skillNameInput.getText().toString().trim();
                     String skillDescription = skillDescriptionInput.getText().toString().trim();
                     int skillScore = Integer.parseInt(skillScoreInput.getText().toString().trim());
-                    int skillMaxPoints = 100;  // You can adjust this if needed
+                    int skillMaxPoints = 100;
 
                     if (!skillName.isEmpty()) {
-                        // Create new skill object
+                        // Create a new skill
                         Skill newSkill = new Skill(
-                                databaseHelper.generateSkillId(),  // Generate skill ID
+                                databaseHelper.generateSkillId(),
                                 skillName,
                                 skillScore,
                                 skillMaxPoints,
                                 skillDescription,
-                                category  // Set the category object (linking skill to category)
+                                category
                         );
 
-                        // Add skill to the category object
-                        category.getSkills().add(newSkill);
-
-                        // Add skill to the database (linking it to the category by categoryId)
+                        // Add the skill to the adapter and database
+                        skillAdapter.getSkills().add(newSkill);
                         databaseHelper.addSkillToCategory(category.getId(), newSkill);
 
-                        // Update the RecyclerView UI
-                        skillAdapter.notifyItemInserted(category.getSkills().size() - 1);
+                        // Notify the adapter and update the average score
+                        skillAdapter.notifyItemInserted(skillAdapter.getSkills().size() - 1);
+                        updateCategoryAverageScore();
                     }
                 })
                 .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
@@ -112,4 +114,21 @@ public class CategoryDetailFragment extends Fragment {
         builder.create().show();
     }
 
+    private void updateCategoryAverageScore() {
+        // Calculate the new average score
+        List<Skill> skills = skillAdapter.getSkills();
+        double totalScore = 0;
+
+        for (Skill skill : skills) {
+            totalScore += skill.getPoints();
+        }
+
+        double newAverageScore = skills.isEmpty() ? 0 : totalScore / skills.size();
+
+        // Update the category's average score field
+        category.setAverageScore((float) newAverageScore);
+
+        // Update the UI
+        categoryAverageScoreTextView.setText(String.format("Average Score: %.2f", category.getAverageScore()));
+    }
 }

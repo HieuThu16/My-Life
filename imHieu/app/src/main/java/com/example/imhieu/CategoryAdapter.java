@@ -29,16 +29,25 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
     }
 
     @Override
+
     public void onBindViewHolder(@NonNull CategoryViewHolder holder, int position) {
         Category category = categories.get(position);
+
+        // Hiển thị tên thể loại
         holder.nameTextView.setText(category.getName());
-        holder.averageScoreTextView.setText(String.format("Average Score: %.2f", category.getAverageScore()));
+
+        // Hiển thị điểm trung bình
+        double averageScore = category.getAverageScore();
+        holder.averageScoreTextView.setText(String.format("Average Score: %.2f", averageScore));
+
+        // Xử lý khi người dùng bấm vào item
         holder.itemView.setOnClickListener(v -> {
             if (onCategoryClickListener != null) {
                 onCategoryClickListener.onCategoryClick(category);
             }
         });
     }
+
 
     @Override
     public int getItemCount() {

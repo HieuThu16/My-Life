@@ -1,9 +1,11 @@
 package com.example.imhieu;
 
 import com.example.imhieu.Skill;
+
+import java.io.Serializable;
 import java.util.List;
 
-public class Category {
+public class Category implements Serializable {
     private int id;
     private String name;
     private List<Skill> skills;

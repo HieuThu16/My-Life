@@ -5,15 +5,17 @@ public class Skill {
     private String name;
     private int points;
     private int maxPoints;
-    private String description; // Thêm thuộc tính description
+    private String description; // Description of the skill
+    private Category category;  // The category this skill belongs to
 
     // Constructor
-    public Skill(int id, String name, int points, int maxPoints, String description) {
+    public Skill(int id, String name, int points, int maxPoints, String description, Category category) {
         this.id = id;
         this.name = name;
         this.points = points;
         this.maxPoints = maxPoints;
         this.description = description;
+        this.category = category; // Initialize category
     }
 
     // Getters and Setters
@@ -55,5 +57,13 @@ public class Skill {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
     }
 }

@@ -12,10 +12,13 @@ import java.util.List;
 
 public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.CategoryViewHolder> {
     private List<Category> categories;
+    private OnCategoryClickListener onCategoryClickListener;
 
-    public CategoryAdapter(List<Category> categories) {
+    public CategoryAdapter(List<Category> categories, OnCategoryClickListener onCategoryClickListener) {
         this.categories = categories;
+        this.onCategoryClickListener = onCategoryClickListener;
     }
+
 
     @NonNull
     @Override
@@ -30,6 +33,11 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.Catego
         Category category = categories.get(position);
         holder.nameTextView.setText(category.getName());
         holder.averageScoreTextView.setText(String.format("Average Score: %.2f", category.getAverageScore()));
+        holder.itemView.setOnClickListener(v -> {
+            if (onCategoryClickListener != null) {
+                onCategoryClickListener.onCategoryClick(category);
+            }
+        });
     }
 
     @Override

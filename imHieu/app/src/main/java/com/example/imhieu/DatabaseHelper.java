@@ -11,37 +11,47 @@ import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "skills.db";
-    private static final int DATABASE_VERSION = 2; // Incremented version
+    private static final int DATABASE_VERSION = 3; // Incremented for new tables
 
-
-    // Categories Table
+    // Existing tables
     private static final String TABLE_CATEGORIES = "categories";
     private static final String COLUMN_CATEGORY_ID = "id";
     private static final String COLUMN_CATEGORY_NAME = "name";
-
-    // Skills Table
     private static final String TABLE_SKILLS = "skills";
     private static final String COLUMN_SKILL_ID = "id";
     private static final String COLUMN_SKILL_NAME = "name";
     private static final String COLUMN_SKILL_SCORE = "score";
     private static final String COLUMN_SKILL_MAX_POINTS = "max_points";
     private static final String COLUMN_SKILL_DESCRIPTION = "description";
-    private static final String COLUMN_SKILL_CATEGORY_ID = "category_id"; // foreign key reference to category
+    private static final String COLUMN_SKILL_CATEGORY_ID = "category_id";
+
+    // New tables for goals
+    private static final String TABLE_GOALS = "goals";
+    private static final String COLUMN_GOAL_ID = "id";
+    private static final String COLUMN_GOAL_TITLE = "title";
+    private static final String COLUMN_GOAL_DESCRIPTION = "description";
+    private static final String COLUMN_GOAL_PROGRESS = "progress";
+    private static final String COLUMN_GOAL_IS_LONG_TERM = "is_long_term";
+
+    // New table for sub-goals
+    private static final String TABLE_SUBGOALS = "subgoals";
+    private static final String COLUMN_SUBGOAL_ID = "id";
+    private static final String COLUMN_PARENT_GOAL_ID = "parent_goal_id";
+    private static final String COLUMN_SUBGOAL_TITLE = "title";
+    private static final String COLUMN_SUBGOAL_IS_COMPLETED = "is_completed";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
     @Override
-
     public void onCreate(SQLiteDatabase db) {
-        // Create Categories Table
+        // Keep existing table creation
         String createCategoriesTable = "CREATE TABLE " + TABLE_CATEGORIES + " ("
                 + COLUMN_CATEGORY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + COLUMN_CATEGORY_NAME + " TEXT)";
         db.execSQL(createCategoriesTable);
 
-        // Create Skills Table
         String createSkillsTable = "CREATE TABLE " + TABLE_SKILLS + " ("
                 + COLUMN_SKILL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + COLUMN_SKILL_NAME + " TEXT, "
@@ -49,19 +59,124 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + COLUMN_SKILL_MAX_POINTS + " INTEGER, "
                 + COLUMN_SKILL_DESCRIPTION + " TEXT, "
                 + COLUMN_SKILL_CATEGORY_ID + " INTEGER, "
-                + "FOREIGN KEY (" + COLUMN_SKILL_CATEGORY_ID + ") REFERENCES " + TABLE_CATEGORIES + " (" + COLUMN_CATEGORY_ID + "))";
+                + "FOREIGN KEY (" + COLUMN_SKILL_CATEGORY_ID + ") REFERENCES " + TABLE_CATEGORIES + "(" + COLUMN_CATEGORY_ID + "))";
         db.execSQL(createSkillsTable);
-    }
 
+        // Add new tables for goals
+        String createGoalsTable = "CREATE TABLE " + TABLE_GOALS + " ("
+                + COLUMN_GOAL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + COLUMN_GOAL_TITLE + " TEXT, "
+                + COLUMN_GOAL_DESCRIPTION + " TEXT, "
+                + COLUMN_GOAL_PROGRESS + " INTEGER DEFAULT 0, "
+                + COLUMN_GOAL_IS_LONG_TERM + " INTEGER DEFAULT 0)";
+        db.execSQL(createGoalsTable);
+
+        String createSubGoalsTable = "CREATE TABLE " + TABLE_SUBGOALS + " ("
+                + COLUMN_SUBGOAL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + COLUMN_PARENT_GOAL_ID + " INTEGER, "
+                + COLUMN_SUBGOAL_TITLE + " TEXT, "
+                + COLUMN_SUBGOAL_IS_COMPLETED + " INTEGER DEFAULT 0, "
+                + "FOREIGN KEY (" + COLUMN_PARENT_GOAL_ID + ") REFERENCES " + TABLE_GOALS + "(" + COLUMN_GOAL_ID + "))";
+        db.execSQL(createSubGoalsTable);
+    }
 
     @Override
-
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_SKILLS); // Drop skills table
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_CATEGORIES); // Drop categories table
-        onCreate(db); // Recreate the tables
+        // Drop all tables
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_SUBGOALS);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_GOALS);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_SKILLS);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_CATEGORIES);
+        onCreate(db);
     }
 
+    // New methods for goals management
+    public long addGoal(Goal goal) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_GOAL_TITLE, goal.getTitle());
+        values.put(COLUMN_GOAL_DESCRIPTION, goal.getDescription());
+        values.put(COLUMN_GOAL_PROGRESS, goal.getProgress());
+        values.put(COLUMN_GOAL_IS_LONG_TERM, goal.isLongTerm() ? 1 : 0);
+        long id = db.insert(TABLE_GOALS, null, values);
+        db.close();
+        return id;
+    }
+
+    public long addSubGoal(SubGoal subGoal) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_PARENT_GOAL_ID, subGoal.getParentGoalId());
+        values.put(COLUMN_SUBGOAL_TITLE, subGoal.getTitle());
+        values.put(COLUMN_SUBGOAL_IS_COMPLETED, subGoal.isCompleted() ? 1 : 0);
+        long id = db.insert(TABLE_SUBGOALS, null, values);
+        db.close();
+        return id;
+    }
+
+    public List<Goal> getAllGoals() {
+        List<Goal> goals = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_GOALS, null, null, null, null, null, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                Goal goal = new Goal(
+                        cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_GOAL_ID)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_GOAL_TITLE)),
+                        cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_GOAL_DESCRIPTION)),
+                        cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_GOAL_IS_LONG_TERM)) == 1
+                );
+                goal.setProgress(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_GOAL_PROGRESS)));
+                goals.add(goal);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return goals;
+    }
+
+    public List<SubGoal> getSubGoalsForGoal(int goalId) {
+        List<SubGoal> subGoals = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_SUBGOALS, null,
+                COLUMN_PARENT_GOAL_ID + " = ?",
+                new String[]{String.valueOf(goalId)},
+                null, null, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                SubGoal subGoal = new SubGoal(
+                        cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SUBGOAL_ID)),
+                        goalId,
+                        cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_SUBGOAL_TITLE))
+                );
+                subGoal.setCompleted(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SUBGOAL_IS_COMPLETED)) == 1);
+                subGoals.add(subGoal);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return subGoals;
+    }
+
+    public void updateGoalProgress(int goalId, int progress) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_GOAL_PROGRESS, progress);
+        db.update(TABLE_GOALS, values, COLUMN_GOAL_ID + " = ?",
+                new String[]{String.valueOf(goalId)});
+        db.close();
+    }
+
+    public void updateSubGoalStatus(int subGoalId, boolean completed) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_SUBGOAL_IS_COMPLETED, completed ? 1 : 0);
+        db.update(TABLE_SUBGOALS, values, COLUMN_SUBGOAL_ID + " = ?",
+                new String[]{String.valueOf(subGoalId)});
+        db.close();
+    }
 
     // Add a new category to the database
     public void addCategory(Category category) {
